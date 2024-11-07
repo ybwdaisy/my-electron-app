@@ -14,7 +14,7 @@ if (process.defaultApp) {
 let printWindow
 
 // Utility function to create a hidden window for printing
-function createPrintWindow() {
+const createPrintWindow = () => {
   printWindow = new BrowserWindow({
     show: false,
     webPreferences: {
@@ -25,7 +25,7 @@ function createPrintWindow() {
 }
 
 // Function to print an image silently
-async function printImageSilently(imagePath, printerName = null) {
+const printImageSilently = async (imagePath, printerName = null) => {
   return new Promise((resolve, reject) => {
     // Load the HTML content
     printWindow.loadURL(imagePath);
@@ -62,6 +62,33 @@ async function printImageSilently(imagePath, printerName = null) {
   });
 }
 
+const handleDeepLink = async (url) => {
+  // Parse the URL and extract parameters
+  const urlObj = new URL(url)
+  const action = urlObj.hostname // or use pathname depending on your URL structure
+  const params = Object.fromEntries(urlObj.searchParams)
+
+  if (params.url) {
+    const paths = params.url.split(',')
+
+    const allPromises = paths.map((p) => async () => await printImageSilently(decodeURIComponent(p)))
+    await runPromisesByQueue(allPromises);
+  }
+}
+
+
+const runPromisesByQueue = async (promises = []) => {
+  const results = [];
+  for(let promise of promises) {
+    try {
+      results.push(await promise());
+    } catch (e) {
+      results.push(null);
+    }
+  }
+  return results;
+}
+
 // Handle deep linking in development
 if (isDev) {
   const gotTheLock = app.requestSingleInstanceLock()
@@ -87,18 +114,6 @@ app.on('open-url', (event, url) => {
   event.preventDefault()
   handleDeepLink(url)
 })
-
-const handleDeepLink = async (url) => {
-  // Parse the URL and extract parameters
-  const urlObj = new URL(url)
-  const action = urlObj.hostname // or use pathname depending on your URL structure
-  const params = Object.fromEntries(urlObj.searchParams)
-
-  if (params.url) {
-    const paths = params.url.split(',')
-    await Promise.all(paths.map(async (p) => await printImageSilently(decodeURIComponent(p))));
-  }
-}
 
 app.whenReady().then(createPrintWindow)
 
