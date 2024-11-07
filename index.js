@@ -25,7 +25,7 @@ const createPrintWindow = () => {
 }
 
 // Function to print an image silently
-const printImageSilently = async (imagePath, printerName = null) => {
+const printImageSilently = async (imagePath) => {
   return new Promise((resolve, reject) => {
     // Load the HTML content
     printWindow.loadURL(imagePath);
@@ -36,7 +36,6 @@ const printImageSilently = async (imagePath, printerName = null) => {
       const printOptions = {
         silent: true,
         printBackground: true,
-        deviceName: printerName,
         margins: {
           marginType: 'none'
         }
@@ -44,7 +43,7 @@ const printImageSilently = async (imagePath, printerName = null) => {
 
       // Print the window contents
       printWindow.webContents.print(printOptions, (success, reason) => {
-        printWindow.close();
+        // printWindow.close();
 
         if (success) {
           resolve();
@@ -69,24 +68,16 @@ const handleDeepLink = async (url) => {
   const params = Object.fromEntries(urlObj.searchParams)
 
   if (params.url) {
-    const paths = params.url.split(',')
+    const imagePaths = params.url.split(',')
 
-    const allPromises = paths.map((p) => async () => await printImageSilently(decodeURIComponent(p)))
-    await runPromisesByQueue(allPromises);
-  }
-}
-
-
-const runPromisesByQueue = async (promises = []) => {
-  const results = [];
-  for(let promise of promises) {
-    try {
-      results.push(await promise());
-    } catch (e) {
-      results.push(null);
+    for (const imagePath of imagePaths) {
+      try {
+        await printImageSilently(decodeURIComponent(imagePath))
+      } catch (error) {
+        console.error(`Error printing ${imagePath}:`, error);
+      }
     }
   }
-  return results;
 }
 
 // Handle deep linking in development
@@ -95,24 +86,24 @@ if (isDev) {
   if (!gotTheLock) {
     app.quit()
   } else {
-    app.on('second-instance', (event, commandLine) => {
+    app.on('second-instance', async (event, commandLine) => {
       if (printWindow) {
         if (printWindow.isMinimized()) {
           printWindow.restore()
         }
         printWindow.focus()
         // Handle the deep link URL
-        const url = commandLine.pop()
-        handleDeepLink(url)
+        const url = commandLine.pop();
+        await handleDeepLink(url)
       }
     })
   }
 }
 
 // Handle deep linking in production
-app.on('open-url', (event, url) => {
-  event.preventDefault()
-  handleDeepLink(url)
+app.on('open-url', async (event, url) => {
+  event.preventDefault();
+  await handleDeepLink(url)
 })
 
 app.whenReady().then(createPrintWindow)
