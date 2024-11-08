@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "electronmon .",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
@@ -17,7 +17,8 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "@electron-forge/plugin-fuses": "^7.5.0",
     "@electron/fuses": "^1.8.0",
-    "electron": "^33.1.0"
+    "electron": "^33.1.0",
+    "electronmon": "^2.0.3"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1"
@@ -25,7 +26,9 @@
   "build": {
     "protocols": {
       "name": "Laso Printer",
-      "schemes": ["lasoprinter"]
+      "schemes": [
+        "lasoprinter"
+      ]
     }
   }
 }

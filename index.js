@@ -28,7 +28,44 @@ const createPrintWindow = () => {
 const printImageSilently = async (imagePath) => {
   return new Promise((resolve, reject) => {
     // Load the HTML content
-    printWindow.loadURL(imagePath);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          img {
+            max-width: 100%;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            page-break-inside: avoid;
+          }
+          @page {
+            size: auto;
+            margin: 0mm;
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${imagePath}" />
+      </body>
+      </html>
+    `;
+    const url = `data:text/html;charset=UTF-8,${encodeURIComponent(htmlContent)}`;
+    printWindow.loadURL(url);
+
+    // printWindow.loadURL(imagePath);
 
     // Wait for content to load
     printWindow.webContents.on('did-finish-load', () => {
@@ -38,6 +75,12 @@ const printImageSilently = async (imagePath) => {
         printBackground: true,
         margins: {
           marginType: 'none'
+        },
+        deviceScaleFactor: 2,
+        color: true,
+        pageSize: {
+          width: 8.5 * 25400,
+          height: 11 * 25400,
         }
       };
 
